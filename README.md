@@ -135,3 +135,14 @@ Implemented a **Confidence-Based Schedule** rather than a random linear schedule
 
 4. Run SFT and Visualization:
    `python3 sft_demo.py` (fine-tunes on Q&A and demonstrates chatbot)
+
+## Data Source
+
+The `TinyShakespeare` dataset used in this project is sourced from Andrej Karpathy's `char-rnn` repository:  
+<https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt>
+
+## Citation
+
+This implementation is based on the paper:  
+Li, X., et al. "Large Language Diffusion Models." arXiv:2502.09992 (2025).  
+<https://arxiv.org/pdf/2502.09992>
