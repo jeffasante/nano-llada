@@ -18,14 +18,46 @@ stoi = tokenizer['stoi']
 
 # Filter Hamlet text to known chars
 hamlet_ids = [stoi[c] for c in hamlet_text if c in stoi]
-data = torch.tensor(hamlet_ids, dtype=torch.long)
+data = torch.tensor(hamlet_ids, dtype=torch.long).to(device)
 
-# Load or initialize model
+# Initialize model
 model = LLaDAMs(vocab_size).to(device)
-# Uncomment to load trained model
-# model.load_state_dict(torch.load("path/to/trained_model.pt"))
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
 
-# --- FINAL CORRECTED GENERATOR (Handles Remainders) ---
+# Training loop for overfitting on Hamlet
+print("🚀 Training on Hamlet (Overfitting)...")
+model.train()
+for epoch in range(100):  # Overfit on this small text
+    # Create masked input
+    t = torch.rand(1).item()
+    num_mask = int(t * len(data))
+    masked_input = data.clone()
+    mask_indices = torch.randperm(len(data))[:num_mask]
+    masked_input[mask_indices] = mask_token_id
+    
+    # Forward pass
+    logits = model(masked_input.unsqueeze(0))
+    targets = data.unsqueeze(0)
+    
+    # Loss only on masked positions
+    loss_mask = torch.zeros_like(targets, dtype=torch.float)
+    loss_mask[0, mask_indices] = 1.0
+    
+    loss = nn.CrossEntropyLoss(reduction='none')(logits.view(-1, vocab_size), targets.view(-1))
+    loss = (loss.view(targets.shape) * loss_mask).sum() / (loss_mask.sum() + 1e-8)
+    
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch}: Loss {loss.item():.4f}")
+
+# Save the trained model
+torch.save(model.state_dict(), "hamlet_model.pt")
+print("✅ Model saved as 'hamlet_model.pt'")
+
+# FINAL CORRECTED GENERATOR (Handles Remainders)
 print("\n--- RECONSTRUCTING HAMLET (Final Polish) ---")
 model.eval()
 curr = torch.full((1, len(data)), mask_token_id, device=device)
@@ -37,7 +69,6 @@ print(f"{'Step':<5} | Text")
 print("-" * 60)
 
 for step in range(steps):
-    # 1. Visualize
     chars_curr = curr[0].cpu().numpy()
     text = "".join(['.' if c == mask_token_id else itos[c] for c in chars_curr])
     # Print clean single line
